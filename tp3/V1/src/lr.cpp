@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <mutex>
 using namespace std;
 
 //#include "Sphere.hpp"
@@ -9,10 +10,11 @@ using namespace std;
 #include "Image.hpp"
 #include "Camera.hpp"
 
+
 // profondeur de la récursion pour le lancer de rayons
 #define PROF 2
 // nombre de threads à utiliser
-#define NBT 1
+#define NBT 4
 
 
 int main(int argc, char *argv[]){
@@ -34,13 +36,15 @@ int main(int argc, char *argv[]){
     return -1;
   };
 
+
   // création de l'image et de la caméra
   Image im(512,512);
   Camera cam;
 
   // génération de l'image à partir de la caméra
 
-  cam.genererImage(sc, im, PROF);
+  // cam.genererImage(sc, im, PROF);
+  cam.genererImageParallele(sc, im, PROF, NBT);
 
 
   // sauvegarde de l'image
