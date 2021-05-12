@@ -9,6 +9,8 @@ Camera::Camera() {
   distance = 2.0;
 }
 
+std::mutex Camera::mtx;
+
 Camera::~Camera() {}
 
 void Camera::genererImage(const Scene& sc, Image& im, int profondeur) {
@@ -47,6 +49,13 @@ void Camera::genererImage(const Scene& sc, Image& im, int profondeur) {
   }  // for i
 }
 
+std::thread Camera::spawnThreadForComputation(const Scene& sc, Image& im,
+                                              int profondeur, const zone& area,
+                                              const Point& position) {
+  return std::thread(calculeZone, std::ref(sc), std::ref(im), profondeur, area,
+                     std::ref(this->position));
+}
+
 void Camera::genererImageParallele(const Scene& sc, Image& im, int profondeur,
                                    int nbThreads) {
   std::vector<std::thread> threads;
@@ -56,10 +65,10 @@ void Camera::genererImageParallele(const Scene& sc, Image& im, int profondeur,
   auto zone_height = img_height / nbThreads;
 
   for (int i = 0; i < img_height; i++) {
-    if (i == img_width - 1 || (i != 0 && i % zone_height == 0)) {  // On arrive a la zone suivante
-      threads.push_back(std::thread(calculeZone, std::ref(sc), std::ref(im),
-                                    profondeur, zone{0, i, img_width, i},
-                                    std::ref(this->position)));
+    if (i == img_width - 1 ||
+        (i != 0 && i % zone_height == 0)) {  // On arrive a la zone suivante
+      threads.push_back(this->spawnThreadForComputation(
+          sc, im, profondeur, zone{0, i, img_width, i}, this->position));
     }
   }
 

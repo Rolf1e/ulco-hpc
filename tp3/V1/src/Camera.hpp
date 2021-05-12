@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <mutex>
+#include <sstream>
 #include <thread>
 
 using namespace std;
@@ -38,6 +39,12 @@ class Camera {
   Point cible; /**< Point visé par la caméra. Ce point sera au centre de l'image
                 */
   float distance; /**< distance de l'origine de la caméra au plan image */
+
+  std::thread spawnThreadForComputation(const Scene& sc, Image& im,
+                                        int profondeur, const zone& area,
+                                        const Point& position);
+
+  static std::mutex mtx;
 
  public:
   /**
@@ -75,10 +82,9 @@ class Camera {
                              int nbThreads);
 
   static void protected_cout(std::string message) {
-    std::mutex mtx;
-    mtx.lock();
+    Camera::mtx.lock();
     std::cout << message << std::endl;
-    mtx.unlock();
+    Camera::mtx.unlock();
   }
 
   static void calculeZone(const Scene& sc, Image& im, int profondeur,
@@ -87,7 +93,6 @@ class Camera {
                    " y:" + std::to_string(area.y) +
                    " l:" + std::to_string(area.largeur) +
                    " h:" + std::to_string(area.hauteur));
-    std::mutex mtx;
 
     float cotePixel = 2.0 / im.getLargeur();
 
@@ -110,17 +115,19 @@ class Camera {
         // Lancer du rayon primaire
         Intersection inter;
 
-        mtx.lock();
+        Camera::mtx.lock();
         if (sc.intersecte(ray, inter)) {
           im.setPixel(i, j, inter.getCouleur(sc, position, profondeur));
         } else {
           im.setPixel(i, j, sc.getFond());
         }
-        mtx.unlock();
+        Camera::mtx.unlock();
       }
     }
 
-     std::cout << "thread : " << std::this_thread::get_id() << std::endl;
+    stringstream ss;
+    ss << std::this_thread::get_id();
+    protected_cout("thread : " + ss.str());
   }
 };
 
