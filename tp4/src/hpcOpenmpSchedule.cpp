@@ -39,16 +39,20 @@ int main(int argc, char** argv) {
 
   // compute image data
   // TODO
-  for (int x = 0; x < width; x++) {
-    for (int y = 0; y < height; y++) {
-      // diagonal gradient
-      // TODO remove that
-      double t = (x + y) / sqrt(width * width + height * height);
-      double f = 2.0;
-      ind(x, y) = 127.0 * (1 + cos(2.0 * M_PI * f * t));
-
-      // put the color of the thread
-      // TODO
+#pragma omp parallel num_threads(3)
+  {
+    auto thread_id = omp_get_thread_num();
+#pragma omp for collapse(2) schedule(dynamic, 32)
+    for (int x = 0; x < width; x++) {
+      for (int y = 0; y < height; y++) {
+        if (thread_id == 0) {
+          ind(x, y) = 255.0;
+        } else if (thread_id == 1) {
+          ind(x, y) = 0.0;
+        } else {
+          ind(x, y) = 127.0;
+        }
+      }
     }
   }
 
